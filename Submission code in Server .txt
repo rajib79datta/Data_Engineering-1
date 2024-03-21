@@ -1,0 +1,62 @@
+Submission code in Server 
+
+ssh rada3822@fredholm.it.uu.se
+
+scp ./A2.tar.gz rada3822@fredholm.it.uu.se:./
+
+scp ./check-A2.sh rada3822@fredholm.it.uu.se:./
+
+
+triang.o:
+	gcc -Wall -Werror -c triang.c
+	gcc -o triang triang.o
+
+clean:
+	/bin/rm -f triang triang.o
+
+
+
+void insertDayTData(struct DayTempData** head, int index, double minTemp, double maxTemp) {
+    // Check if the data for the given day already exists
+    struct DayTempData* current = *head;
+    while (current != NULL) {
+        if (current->index == index) {
+            // Data for this day already exists, you can choose to update it or ignore the duplicate
+            printf("Data for day %d already exists. Ignoring duplicate entry.\n", index);
+            return;
+        }
+        current = current->next;
+    }
+
+    // If data doesn't exist, proceed with insertion
+    struct DayTempData* newNode = (struct DayTempData*)malloc(sizeof(struct DayTempData));
+    if (newNode == NULL) {
+        fprintf(stderr, "Memory Allocation error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    newNode->index = index;
+    newNode->minTemp = minTemp;
+    newNode->maxTemp = maxTemp;
+    newNode->next = NULL;
+
+    // Find the appropriate location to insert in a sorted manner.
+    current = *head;
+    struct DayTempData* prev = NULL;
+
+    // Data Insert with pointer movement into the linked list.
+    while (current != NULL && current->index < index) {
+        prev = current;
+        current = current->next;
+    }
+
+    if (prev == NULL) {
+        // Insert at the beginning position
+        newNode->next = *head;
+        *head = newNode;
+    } else {
+        // Insert in the middle or at the end
+        prev->next = newNode;
+        newNode->next = current;
+    }
+}

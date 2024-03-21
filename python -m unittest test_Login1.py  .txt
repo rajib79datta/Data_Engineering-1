@@ -1,0 +1,7 @@
+python -m unittest test_Login1.py > loginfile1
+
+python -m unittest test_Logout1.py > logoutfile1
+
+python -m unittest test_Logout.py > logoutfile2
+
+diff logoutfile1 logoutfile2 > test_results_logout_diff.txt

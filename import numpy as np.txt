@@ -1,0 +1,150 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.sparse import kron, identity
+import operators as ops
+import rungekutta4 as rk4
+
+
+def select_sbp_fun(order=2):
+    if order == 2:
+        fun = ops.sbp_cent_2nd
+    elif order == 4:
+        fun = ops.sbp_cent_4th
+    elif order == 6:
+        fun = ops.sbp_cent_6th
+    else:
+        raise NotImplementedError('Order not implemented.')
+    return fun
+
+
+# Function to initialize the solution
+def initial_condition(x, y, x0, y0):
+    epsilon = 0.05
+    t = 0
+    return np.exp(-((x - x0) ** 2 + (y - y0) ** 2) / (epsilon ** 2))
+
+
+# Function to solve the 2D problem
+def solve_2d_problem(mx=200, my=100, order=6, T=3):
+    # Model parameters
+    c = 1  # Thermal diffusivity
+
+    # Spatial discretization
+    xl, xr = -1.0, 1.0
+    yl, yr = -1.0, 1.0
+    mtot = (mx + 1) * (my + 1)
+    hx = (xr - xl) / mx
+    hy = (yr - yl) / my
+    xvec = np.linspace(xl, xr, mx + 1)
+    yvec = np.linspace(yl, yr, my + 1)
+    X, Y = np.meshgrid(xvec, yvec)
+    Xv = X.reshape(mtot)
+    Yv = Y.reshape(mtot)
+    
+    
+
+    # Construct discretion matrices
+    sbp_fun = select_sbp_fun(order)
+    #mtot = (mx + 1) * (my + 1)
+
+    Hx, HIx, _, D2x, e_lx, e_rx, d1_lx, d1_rx = sbp_fun(mx + 1, hx)
+    Hy, HIy, _, D2y, e_ly, e_ry, d1_ly, d1_ry = sbp_fun(my + 1, hy)
+
+    Ix = identity(mx + 1, format='csc')
+    Iy = identity(my + 1, format='csc')
+
+    Xv = X.reshape(mtot)
+    Yv = Y.reshape(mtot)
+
+    HI = kron(HIy, HIx)
+    Dxx = kron(Iy, D2x)
+    Dyy = kron(D2y, Ix)
+    e_w = kron(Iy, e_lx)
+    e_e = kron(Iy, e_rx)
+    e_s = kron(e_ly, Ix)
+    e_n = kron(e_ry, Ix)
+    d_w = kron(Iy, d1_lx)
+    d_e = kron(Iy, d1_rx)
+    d_s = kron(d1_ly, Ix)
+    d_n = kron(d1_ry, Ix)
+
+    # Initial condition
+    x0, y0 = 0.0, 0.0
+    epsilon = 0.05
+    u = initial_condition(X, Y, x0, y0)
+    
+    # Check dimensions for compatibility
+    #if e_w.shape[0] != HI.shape[0] or d_w.shape[1] != Hy.shape[0]:
+    #    raise ValueError('Dimension mismatch')
+    # Compute SAT terms
+    print("Shapes:", HI.shape, e_w.shape, Hy.shape, d_w.shape, d_e.shape, d_s.shape, d_n.shape)
+    print("Expected shapes:", (mtot, mtot), (mtot, mtot), (my + 1, my + 1), (mx + 1, mx + 1))
+
+    # SATs for Neumann BC
+    sat_w = HI @ e_w @ Hy @ d_w.T
+    sat_e = -HI @ e_e @ Hy @ d_e.T
+    sat_s = HI @ e_s @ Hx @ d_s.T
+    sat_n = -HI @ e_n @ Hx @ d_n.T
+
+    print("Shapes-1:", e_w_reshaped.shape, d_w_reshaped.shape, e_e_reshaped.shape, d_e_reshaped.shape)
+
+    print("Shapes-1.1:", e_w_reshaped, e_e_reshaped, d_w_reshaped, d_e_reshaped)
+
+    print("Shapes-1.2:", Hy @ d_w_reshaped)
+    
+    # Reshape SAT terms to match the interior grid points
+    sat_w = sat_w.reshape((mx + 1, my + 1)).T
+    sat_e = sat_e.reshape((mx + 1, my + 1)).T
+    sat_s = sat_s.reshape((mx + 1, my + 1)).T
+    sat_n = sat_n.reshape((mx + 1, my + 1)).T
+
+    print("ReShapes:", sat_w.shape, sat_e.shape, sat_s.shape, sat_n.shape)
+
+    # Define the right-hand side function
+    def rhs(u):
+        Dux = Dxx @ u
+        Duy = Dyy @ u
+        return -Dux - Duy + sat_w + sat_e + sat_s + sat_n
+
+    # Time discretization
+    dt = 0.1 * min(hx, hy) ** 2 / c
+    Nt = int(T / dt)
+
+    # Initialize time variable and solution vector
+    t = 0
+    u = initial_condition(Xv, Yv, 0, 0)
+
+    # Time integration using RK4
+    for _ in range(Nt):
+        u = rk4.step(rhs, u, t, dt)
+
+    return u
+
+
+def main():
+    mx = 200  # Number of grid points in x-direction
+    my = 100  # Number of grid points in y-direction
+    T = 3  # End time
+    order = 6
+
+    # Solve the 2D problem
+    try:
+        u = solve_2d_problem(mx=mx, my=my, order=order, T=T)
+    except ValueError as e:
+        print(f"Error: {e}")
+        return
+
+    # Plot numerical solution
+    xvec = np.linspace(-1, 1, mx + 1)
+    yvec = np.linspace(-1, 1, my + 1)
+    X, Y = np.meshgrid(xvec, yvec)
+    plt.contourf(X, Y, u.reshape((my + 1, mx + 1)), cmap='viridis')
+    plt.colorbar()
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.title('Numerical Solution at T=3')
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()

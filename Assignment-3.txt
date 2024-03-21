@@ -1,0 +1,143 @@
+ssh -i .ssh/RD_SSH1.pem ubuntu@130.238.28.134
+
+For resolve the unreachability
+
+Remove
+ssh-keygen -f "/home/rdatta3822/.ssh/known_hosts" -R "130.238.28.134"
+Add
+ssh -o "StrictHostKeyChecking=no" -i .ssh/RD_SSH1.pem ubuntu@130.238.28.134
+
+Java version update
+sudo apt install openjdk-17-jdk-headless
+
+
+jupyter lab --ip=192.168.2.148
+
+
+~/hadoop-3.3.6/bin/hadoop jar ~/hadoop-3.3.6/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.6.jar grep input output 'dfs[a-z.]+'
+
+
+--Download command
+wget ~/home/ubuntu/input http://www.gutenberg.org/ebooks/20417.txt.utf-8
+
+
+download the following data file and place it in that directory
+http://www.gutenberg.org/ebooks/
+
+20417.txt.utf-8
+3. Then go back to your home directory to execute the
+
+-->
+~/hadoop-3.3.6/bin/hadoop jar ~/hadoop-3.3.6/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.6.jar wordcount ./input ./output
+
+
+jupyter lab --ip=192.168.2.199
+
+ssh 130.238.28.179
+
+
+
+textFIle read: 
+spark_context = spark_session.sparkContext
+book_read_sv = spark_context.textFile('hdfs://192.168.2.250:9000/europarl/europarl-v7.sv-en.sv').cache().setName("Svenska Transcripts RDD")
+svenska_line_count = book_read_sv.count()
+print("Number of lines in Svenska transcripts:", svenska_line_count)
+
+#Loading Data to dataframe, store in cache memory to increase speed
+df= sqlContext.read.csv('hdfs://192.168.2.250:9000/parking-citations.csv',header='true', inferSchema='true').cache()
+
+B:
+
+
+A3.1:
+
+from pyspark.sql import SparkSession
+from operator import add
+
+# Create Spark session
+spark = SparkSession.builder \
+    .appName("WordFrequency") \
+    .getOrCreate()
+
+# Read English text file
+english_text = spark.read.text("english_text.txt").rdd.map(lambda r: r[0])
+
+# Tokenize English text into words
+english_words = english_text.flatMap(lambda line: line.split())
+
+# Count the frequency of each English word
+english_word_counts = english_words.map(lambda word: (word, 1)).reduceByKey(add)
+
+# Sort English words by frequency in descending order
+english_most_frequent = english_word_counts.sortBy(lambda x: x[1], ascending=False)
+
+# Take the top 10 most frequent English words
+english_top_10 = english_most_frequent.take(10)
+
+# Print the top 10 most frequent English words
+print("Top 10 most frequent English words:")
+for word, count in english_top_10:
+    print(f"{word}: {count}")
+
+# Repeat the same process for other language text file (assuming it's named 'other_language_text.txt')
+
+# Read other language text file
+other_language_text = spark.read.text("other_language_text.txt").rdd.map(lambda r: r[0])
+
+# Tokenize other language text into words
+other_language_words = other_language_text.flatMap(lambda line: line.split())
+
+# Count the frequency of each other language word
+other_language_word_counts = other_language_words.map(lambda word: (word, 1)).reduceByKey(add)
+
+# Sort other language words by frequency in descending order
+other_language_most_frequent = other_language_word_counts.sortBy(lambda x: x[1], ascending=False)
+
+# Take the top 10 most frequent other language words
+other_language_top_10 = other_language_most_frequent.take(10)
+
+# Print the top 10 most frequent other language words
+print("\nTop 10 most frequent Other Language words:")
+for word, count in other_language_top_10:
+    print(f"{word}: {count}")
+
+# Stop Spark session
+spark.stop()
+
+
+
+sorted(                                  # sort the results by alphabet
+    book.map(lambda x: x.split(" "))     # split each line into seperated words
+    .filter(lambda x: len(x) > 0)        # filter out empty lines
+    .flatMap(lambda x: x)                # flatMap to single words
+    .filter(lambda x: len(x) > 0)        # filter out empty words
+    .keyBy(lambda x: x[0].lower())       # extract the first letter and covert to lower case
+    .map(lambda x: (x[0],1))             # create (first_letter, 1) pairs
+    .reduceByKey(add)                    # reduce the key-value pair by adding up
+    .collect()                           # collect the result
+)
+
+
+
+
+#from operator import add
+#english_preprocess_rdd.take(5)
+en_rdd_sp = book_read_en.map(lambda x: x.split(" "))
+en_words = en_rdd_sp.map(lambda word: (word, 1))
+#en_words.top(2)
+en_wordsFQ = en_words.reduceByKey(lambda x, y: x + y)
+sorted_en_wordsFQ = en_wordsFQ.sortBy(lambda x: x[1], ascending=False)
+en_wordsFQ_top_10 = sorted_en_wordsFQ.take(10)
+#Print the result
+for word, count in en_wordsFQ_top_10:
+    print(f"{word}: {count}")
+
+#en_rdd_sp.take(10)
+#en_rdd_sp1 = en_rdd_sp.filter(lambda x: len(x) > 1)
+#en_rdd_sp1.take(10)
+#en_rdd_1w = en_rdd_sp1.flatMap(lambda x: x)
+#en_rdd_1w.take(30)
+
+
+
+sorted_word_en = sorted(book_read_en.map(lambda x: x.split(" ")).filter(lambda x: len(x) > 0).flatMap(lambda x: x).filter(lambda x: len(x) > 0).KeyBy(lambda x: x[0].lower()).map(lambda x: (x[0], 1)).reduceByKey(add).collect())

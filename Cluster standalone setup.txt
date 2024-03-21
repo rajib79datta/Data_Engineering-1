@@ -1,0 +1,143 @@
+create own hadoop in my computer
+
+/home/rdatta3822/Data_Engineering-1/hadoop-3.3.6
+
+export HADOOP_HOME=/home/rdatta3822/Data_Engineering-1/hadoop-3.3.6
+export PATH=$PATH:$HADOOP_HOME/bin
+
+
+nano hadoop-env.sh
+export JAVA_HOME=/path/to/your/java/home
+
+nano core-site.xml
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://localhost:9000</value>
+    </property>
+
+
+nano hdfs-site.xml
+
+<configuration>
+    <property>
+        <name>dfs.replication</name>
+        <value>1</value>
+    </property>
+</configuration>
+
+
+cp mapred-site.xml.template mapred-site.xml
+nano mapred-site.xml
+
+<configuration>
+    <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+    </property>
+</configuration>
+
+nano yarn-site.xml
+
+<configuration>
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+    </property>
+    <property>
+        <name>yarn.nodemanager.env-whitelist</name>
+        <value>JAVA_HOME,HADOOP_COMMON_HOME,HADOOP_HDFS_HOME,HADOOP_CONF_DIR,CLASSPATH_PREPEND_DISTCACHE,HADOOP_YARN_HOME,HADOOP_MAPRED_HOME</value>
+    </property>
+</configuration>
+
+Format HDFS
+
+/home/rdatta3822/Data_Engineering-1/hadoop-3.3.6/bin/hdfs namenode -format
+
+cd /home/ubuntu/Data_Engineering-1/hadoop-3.3.6/sbin
+
+need to install below package for this
+sudo apt install openssh-server
+sudo service ssh start
+
+below code need to add in /etc/ssh/sshd_config
+
+PermitRootLogin yes
+AllowUsers rdatta3822
+
+chmod +x start-dfs.sh
+chmod +x start-yarn.sh
+
+Generate a New SSH Key Without a Passphrase:
+You can generate a new SSH key pair without a passphrase using the following command:
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa_new -P ""
+
+Add the New SSH Key to Your SSH Agent:
+Check if SSH Agent is Running:
+First, check if the SSH agent is already running by listing all running processes and searching for ssh-agent:
+ps aux | grep ssh-agent
+
+Start SSH Agent:
+You can start the SSH agent by running the following command:
+eval $(ssh-agent)
+
+rdatta3822@DattaEdu:~$ eval $(ssh-agent)
+Agent pid 3852951
+
+After generating the new SSH key, you can add it to your SSH agent to facilitate authentication.
+ssh-add ~/.ssh/id_rsa_new
+
+Test SSH code : ssh localhost
+
+Below code is came up :
+
+Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 5.15.133.1-microsoft-standard-WSL2 x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+ * Strictly confined Kubernetes makes edge and IoT secure. Learn how MicroK8s
+   just raised the bar for easy, resilient and secure K8s cluster deployment.
+
+   https://ubuntu.com/engage/secure-kubernetes-at-the-edge
+Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 5.15.133.1-microsoft-standard-WSL2 x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+ * Strictly confined Kubernetes makes edge and IoT secure. Learn how MicroK8s
+   just raised the bar for easy, resilient and secure K8s cluster deployment.
+
+   https://ubuntu.com/engage/secure-kubernetes-at-the-edge
+Last login: Sat Mar  2 20:45:34 2024 from 127.0.0.1
+
+
+If you don't want to enter the passphrase each time, you can remove the passphrase from your SSH key using the following command:
+cp ~/.ssh/id_rsa ~/.ssh/id_rsa_backup
+
+ssh-keygen -p -f ~/.ssh/id_rsa
+
+
+cd /home/ubuntu/Data_Engineering-1/hadoop-3.3.6/sbin
+./start-dfs.sh
+./start-yarn.sh
+
+
+
+
+---- Spark
+Download location for spark
+
+wget https://dlcdn.apache.org/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3.tgz
+tar -xzvf spark-3.5.1-bin-hadoop3.tgz spark-3.5.1
+
+export SPARK_HOME=/home/rdatta3822/Data_Engineering-1/spark-3.5.1
+export PATH=$PATH:$SPARK_HOME/bin
+export PYSPARK_PYTHON=python3 
+
+
+Spark start code
+
+start-master.sh
+start-slaves.sh
